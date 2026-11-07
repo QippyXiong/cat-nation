@@ -143,7 +143,7 @@ body.map-mode #local-dock .local-summary { display:none; }
 #hex-app label { display:block; color:var(--muted); font-size:11px; margin-bottom:5px; }
 #hex-app select { max-width:100%; font-size:11px; }
 #hex-app a { color:var(--gold); }
-#hex-app .live-toolbar { display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:6px; max-width:540px; }
+#hex-app .live-toolbar { display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:6px; max-width:650px; }
 #hex-app .live-toolbar button { font-size:11px; }
 #hex-app .live-toolbar .autosave-setting { display:flex; align-items:center; gap:6px; margin:0; font-size:11px; }
 #hex-app .live-toolbar .autosave-setting select { padding:6px; }

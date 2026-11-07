@@ -44,6 +44,10 @@ function client(storage = new Map()) {
   vm.runInNewContext(source, sandbox);
   const game = {
     opts: {},
+    ticks: 0,
+    ticksPerSecond: 5,
+    tick() { if (!this.isPaused) this.ticks++; },
+    getTicksPerSecondUI() { return this.ticksPerSecond; },
     save() { this.ticksBeforeSave = this.autosaveFrequency; return { hexMap: { version: 1 }, progress: now }; }
   };
   const flush = () => new Promise(resolve => setImmediate(resolve));
@@ -105,4 +109,47 @@ test('autosave interval reschedules without duplicate timers, survives reload, a
   assert.equal(current.api.canWrite(), false);
   await current.advance(60000);
   assert.equal(current.writes.length, 7);
+});
+
+test('speed accelerates simulation steps and displayed rates, persists, and does not accelerate disk saves', async () => {
+  const storage = new Map(), current = client(storage);
+  await current.attach();
+  assert.equal(current.api.getGameSpeed(), 1);
+  current.game.tick();
+  assert.equal(current.game.ticks, 1);
+  for (const speed of [2, 3, 5, 10, 20, 1]) {
+    current.api.setGameSpeed(speed);
+    const before = current.game.ticks;
+    current.game.tick();
+    assert.equal(current.game.ticks - before, speed);
+    assert.equal(current.game.getTicksPerSecondUI(), 5 * speed);
+    assert.equal(current.game.ticksPerSecond, 5);
+  }
+  current.api.setGameSpeed(10);
+  current.game.isPaused = true;
+  const paused = current.game.ticks;
+  current.game.tick();
+  assert.equal(current.game.ticks, paused);
+  await current.advance(14999);
+  assert.equal(current.writes.length, 1);
+  await current.advance(1);
+  assert.equal(current.writes.length, 2);
+  assert.equal(client(storage).api.getGameSpeed(), 10);
+  for (const invalid of [0, -1, 4, 100, Infinity, NaN]) assert.throws(() => current.api.setGameSpeed(invalid));
+  assert.equal(current.api.getGameSpeed(), 10);
+  current.game.isPaused = false;
+  current.conflict();
+  await current.advance(15000);
+  current.game.tick();
+  assert.equal(current.game.ticks, paused);
+});
+
+test('pausing or beginning a reset inside a speed batch prevents all remaining simulation steps', async () => {
+  const current = client();
+  let pulses = 0;
+  current.game.tick = function () { pulses++; this.isPaused = true; };
+  await current.attach();
+  current.api.setGameSpeed(20);
+  current.game.tick();
+  assert.equal(pulses, 1);
 });

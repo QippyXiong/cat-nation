@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   var classic = new URLSearchParams(location.search).get('view') === 'classic' || new URLSearchParams(location.search).has('saveId');
-  var bridge, game, view, activePanel='district', busy=false, expanded=false, sceneKey='', lastCells, selectedTile, focusGroup, noticeUntil=0;
+  var bridge, game, view, techTree, activePanel='district', busy=false, expanded=false, sceneKey='', lastCells, selectedTile, focusGroup, noticeUntil=0;
   var priority=['calendar','agriculture','mining','archery','animal','math','construction','metal','engineering','writing','steel','civil','currency','philosophy','theology','astronomy','navigation','physics','chemistry','electricity','industrialization','mechanization','electronics','rocketry','sattelites','orbitalEngineering','nuclearFission','particlePhysics','chronophysics'];
   var $=function(id){return document.getElementById(id);};
   var strip=function(text){return String(text||'').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ');};
@@ -13,7 +13,8 @@
   function tooSmall(prices){return (prices||[]).filter(function(p){return resource(p.name).value<p.val&&resource(p.name).maxValue>0&&resource(p.name).maxValue+1e-8<p.val;});}
   function message(text,error){if(!$('map-notice'))return;$('map-notice').textContent=text;$('map-notice').classList.toggle('error',!!error);noticeUntil=Date.now()+7000;}
   async function act(fn){if(busy)return;busy=true;try{bridge.guard();var result=await fn();if(result&&result.itemBought===false)throw new Error('操作未完成：'+result.reason);bridge.sync();sceneKey='';refresh();}catch(error){message(error.message||String(error),true);}finally{busy=false;}}
-  function panel(name){activePanel=name;document.querySelectorAll('#hex-app [data-panel]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.panel===name));});['district','science','village','workshop'].forEach(function(p){$('panel-'+p).hidden=p!==name;});refreshActions();}
+  function panel(name){if(name==='science'){openTechTree();return;}activePanel=name;document.querySelectorAll('#hex-app [data-panel]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.panel===name));});['district','village','workshop'].forEach(function(p){$('panel-'+p).hidden=p!==name;});refreshActions();}
+  function openTechTree(){var plan=techPlan();techTree.open(bridge.map.goal||(plan&&plan.next.name));}
   function focusDistrict(id){
     panel('district');var tile=bridge.map.cells.find(function(t){return t.district===id&&bridge.map.free(t)>0;});
     if(!tile)tile=bridge.map.cells.find(function(t){return !t.district&&t.owned&&bridge.map.suitable(t,id);})||bridge.map.cells.find(function(t){return !t.district&&t.frontier&&bridge.map.suitable(t,id);});
@@ -91,30 +92,29 @@
     var plan=techPlan();focusGroup='science';
     if(!game.bld.get('library').val&&!game.science.get('calendar').researched){$('goal-title').textContent='先建立粮食、住房和科学来源';$('goal-detail').textContent='采集猫薄荷 → 农业区建田 → 精炼木材 → 居住区建小屋 → 学术区建图书馆并安排学者。';$('goal-path').textContent='可以点击聚落中心或地图中的规划地区开始。';}
     else if(plan){var prices=game.science.getPrices(plan.next),capacity=tooSmall(prices),missing=deficient(prices);$('goal-title').textContent='下一步：'+strip(plan.next.label);$('goal-path').textContent='目标路线：'+plan.path.map(function(t){return strip(t.label);}).join(' → ');
-      $('goal-detail').textContent=!plan.next.unlocked?'尚缺前置条件，先按路线解锁。':capacity.length?'先扩容量：'+pricesText(capacity)+'。前往学术区或仓储区检查设施。':missing.length?'继续积累：'+pricesText(missing)+'。安排工人并检查合成材料。':'材料已齐备，可以在科技页研究，然后落实新建筑与升级。';
+      $('goal-detail').textContent=!plan.next.unlocked?'尚缺前置条件，先按路线解锁。':capacity.length?'先扩容量：'+pricesText(capacity)+'。前往学术区或仓储区检查设施。':missing.length?'继续积累：'+pricesText(missing)+'。安排工人并检查合成材料。':'材料已齐备，可以打开科技树研究，然后落实新建筑与升级。';
       if(capacity.some(function(p){return p.name!=='science';}))focusGroup='storage';else if(!capacity.length)focusGroup=null;
     }else{$('goal-title').textContent='拓展你的猫咪文明';$('goal-detail').textContent='当前推荐路线已完成，可以继续查看全部科技与原版的高级系统。';$('goal-path').textContent='';}
-    var select=$('goal-select'),remaining=game.science.techs.filter(function(t){return !t.researched&&t.name!=='brewery'&&t.name!=='artificialGravity';}),signature=remaining.map(function(t){return t.name;}).join(',');
+    var select=$('goal-select'),remaining=game.science.techs.filter(function(t){return !t.researched&&t.name!=='brewery'&&(t.name!=='artificialGravity'||game.getFeatureFlag('SPACE_EXPL')||t.unlocked);}),signature=remaining.map(function(t){return t.name;}).join(',');
     if(select.dataset.signature!==signature){select.replaceChildren(new Option('按路线自动推荐',''));remaining.forEach(function(t){select.append(new Option(strip(t.label),t.name));});select.dataset.signature=signature;}
     select.value=remaining.some(function(t){return t.name===bridge.map.goal;})?bridge.map.goal:'';
   }
   function researchItems(kind){
-    var isTech=kind==='tech',plan=techPlan(),filter=isTech?$('tech-filter').value:'available',list=isTech?game.science.techs:game.workshop.upgrades;
-    if(!isTech&&!game.bld.get('workshop').val)return [];
-    return list.filter(function(t){if(t.name==='brewery'&&isTech)return false;if(isTech){if(filter==='done')return t.researched;if(filter==='all')return t.name!=='artificialGravity'||t.unlocked||t.researched;return !t.researched&&(t.unlocked||plan&&plan.path.includes(t));}return t.unlocked&&!t.researched;}).map(function(t){
-      var pair=bridge.research(kind,t.name),prices=pair.model.prices,missing=deficient(prices),cap=tooSmall(prices),parents=isTech?game.science.techs.filter(function(p){return p.unlocks&&p.unlocks.tech&&p.unlocks.tech.includes(t.name)&&!p.researched;}):[];
-      return {id:t.name,title:strip(t.label),count:t.researched?'已研究':!t.unlocked?'未开放':'已开放',description:strip(t.description),prices:pricesText(prices),status:t.researched?'已经生效':!t.unlocked?'前置：'+(parents.map(function(p){return strip(p.label);}).join('、')||'查看对应科技与建设条件'):cap.length?'容量不足：'+pricesText(cap):missing.length?'材料不足':'可以研究',focused:!!(isTech&&plan&&plan.next===t),actions:[{key:'research',label:t.researched?'已完成':'研究',disabled:!t.unlocked||t.researched||missing.length>0,run:function(){act(function(){var result=bridge.buy(kind,t.name);message('已研究 '+strip(t.label)+'，请查看新建筑、职业和工坊升级。');return result;});}}]};
+    if(!game.bld.get('workshop').val)return [];
+    return game.workshop.upgrades.filter(function(t){return t.unlocked&&!t.researched;}).map(function(t){
+      var pair=bridge.research(kind,t.name),prices=pair.model.prices,missing=deficient(prices),cap=tooSmall(prices);
+      return {id:t.name,title:strip(t.label),count:'已开放',description:strip(t.description),prices:pricesText(prices),status:cap.length?'容量不足：'+pricesText(cap):missing.length?'材料不足':'可以研究',actions:[{key:'research',label:'研究',disabled:missing.length>0||!pair.model.enabled,run:function(){act(function(){var result=bridge.buy(kind,t.name);message('已研究 '+strip(t.label)+'，请查看新建筑、职业和工坊升级。');return result;});}}]};
     });
   }
   function craftItems(){var amount=Number($('craft-batch').value);return game.workshop.crafts.filter(function(c){return c.unlocked&&(c.name==='wood'||game.bld.get('workshop').val>0);}).map(function(c){var prices=game.workshop.getCraftPrice(c).map(function(p){return {name:p.name,val:p.val*amount};});return {id:c.name,title:strip(c.label),count:number(resource(c.name).value),description:strip(c.description),prices:pricesText(prices),actions:[{key:'craft',label:'合成 ×'+amount,disabled:deficient(prices).length>0,run:function(){act(function(){bridge.craft(c.name,amount);});}}]};});}
   function jobItems(){return game.village.jobs.filter(function(j){return j.unlocked;}).map(function(j){return {id:j.name,title:strip(j.title),count:String(j.value)+' 只',description:strip(j.description),actions:[{key:'minus',label:'− 1',disabled:!j.value,run:function(){act(function(){bridge.job(j.name,-1);});}},{key:'plus',label:'+ 1',disabled:game.village.getFreeKittens()<1||j.value>=game.village.getJobLimit(j.name),run:function(){act(function(){bridge.job(j.name,1);});}}]};});}
-  function refreshActions(){if(!game||!selectedTile)return;if(activePanel==='district')cardList('build-list',buildingItems());if(activePanel==='science')cardList('tech-list',researchItems('tech'));if(activePanel==='village'){var v=game.village;$('village-status').textContent='猫咪 '+v.getKittens()+' / 容量 '+number(game.resPool.get('kittens').maxValue)+' · 空闲 '+v.getFreeKittens()+' · 幸福度 '+Math.round(v.happiness*100)+'%';cardList('jobs-list',jobItems());}if(activePanel==='workshop'){cardList('craft-list',craftItems());cardList('upgrade-list',researchItems('upgrade'));}}
+  function refreshActions(){if(!game||!selectedTile)return;if(activePanel==='district')cardList('build-list',buildingItems());if(activePanel==='village'){var v=game.village;$('village-status').textContent='猫咪 '+v.getKittens()+' / 容量 '+number(game.resPool.get('kittens').maxValue)+' · 空闲 '+v.getFreeKittens()+' · 幸福度 '+Math.round(v.happiness*100)+'%';cardList('jobs-list',jobItems());}if(activePanel==='workshop'){cardList('craft-list',craftItems());cardList('upgrade-list',researchItems('upgrade'));}}
   function renderResources(){
     var base=['catnip','wood','science'],priority=['catnip','wood','minerals','science','manpower','kittens'];
     function rank(r){var index=priority.indexOf(r.name);return index<0?priority.length:index;}
     var list=game.resPool.resources.filter(function(r){return base.includes(r.name)||r.visible&&(r.unlocked||r.value>0);}).sort(function(a,b){return rank(a)-rank(b);});if(!expanded)list=list.slice(0,12);
     var container=$('live-resources');Array.from(container.children).forEach(function(row){if(!list.some(function(r){return r.name===row.dataset.key;}))row.remove();});
-    list.forEach(function(r,index){var row=Array.from(container.children).find(function(n){return n.dataset.key===r.name;});if(!row){row=element('div','resource-card');row.dataset.key=r.name;row.append(element('span','resource-name'),element('span','resource-rate'),element('div','resource-value'),element('div','resource-cap'),element('meter'));container.append(row);}var rate=game.getResourcePerTick(r.name,true)*game.ticksPerSecond;if(!Number.isFinite(rate))rate=0;row.querySelector('.resource-name').textContent=r.title||r.name;row.querySelector('.resource-value').textContent=number(r.value);row.querySelector('.resource-cap').textContent=r.maxValue>0?'上限 '+number(r.maxValue):'库存';row.querySelector('.resource-rate').textContent=(rate>0?'+':'')+number(rate)+'/秒';row.querySelector('.resource-rate').classList.toggle('negative',rate<0);var meter=row.querySelector('meter');meter.min=0;meter.max=Math.max(1,r.maxValue||r.value);meter.value=r.value;meter.hidden=!(r.maxValue>0);if(container.children[index]!==row)container.insertBefore(row,container.children[index]||null);});
+    list.forEach(function(r,index){var row=Array.from(container.children).find(function(n){return n.dataset.key===r.name;});if(!row){row=element('div','resource-card');row.dataset.key=r.name;row.append(element('span','resource-name'),element('span','resource-rate'),element('div','resource-value'),element('div','resource-cap'),element('meter'));container.append(row);}var rate=game.getResourcePerTick(r.name,true)*game.getTicksPerSecondUI();if(!Number.isFinite(rate))rate=0;row.querySelector('.resource-name').textContent=r.title||r.name;row.querySelector('.resource-value').textContent=number(r.value);row.querySelector('.resource-cap').textContent=r.maxValue>0?'上限 '+number(r.maxValue):'库存';row.querySelector('.resource-rate').textContent=(rate>0?'+':'')+number(rate)+'/秒';row.querySelector('.resource-rate').classList.toggle('negative',rate<0);var meter=row.querySelector('meter');meter.min=0;meter.max=Math.max(1,r.maxValue||r.value);meter.value=r.value;meter.hidden=!(r.maxValue>0);if(container.children[index]!==row)container.insertBefore(row,container.children[index]||null);});
     $('resources-more').textContent=expanded?'收起资源':'展开全部资源';
   }
   function refresh(){
@@ -127,7 +127,7 @@
     if(selectedTile)$('tile-facts').textContent=tileFacts(selectedTile);
     if($('local-status')&&$('local-status').classList.contains('error'))message($('local-status').textContent,true);
     else if(Date.now()>noticeUntil){var food=game.getResourcePerTick('catnip',true)*game.ticksPerSecond;if(food<0){$('map-notice').textContent='粮食净产出为负，请安排农民、增加供给或控制人口。';$('map-notice').classList.add('error');}else{$('map-notice').textContent=game.isPaused?'聚落已暂停，可以继续调整分工和布局。':'实时进度已接入。选择地区建设，或按发展目标推进科技。';$('map-notice').classList.remove('error');}}
-    refreshActions();
+    refreshActions();if(techTree)techTree.update();
     var messages=game.console.messages||[],recent=messages.slice(0,6);$('live-log').replaceChildren();if(!recent.length)$('live-log').append(element('li',null,'营火已经点燃，聚落正在成长。'));recent.forEach(function(m){$('live-log').append(element('li',null,strip(m.text||m.message||m.msg||'')));});
   }
   function setMode(map){document.body.classList.toggle('map-mode',map);document.documentElement.classList.toggle('map-mode',map);$('hex-app').hidden=!map;$('map-return').hidden=map;game.render();if(map)refresh();}
@@ -138,13 +138,17 @@
     });
     if(classic){await ready;return;}
     var link=element('link');link.rel='stylesheet';link.href='map/style.css';document.head.append(link);
+    var treeStyle=element('link');treeStyle.rel='stylesheet';treeStyle.href='map/tech-tree.css';document.head.append(treeStyle);
     var loading=element('p',null,'正在加载六角聚落…');loading.id='map-loading';document.body.append(loading);
     var response=await fetch('map/shell.html');if(!response.ok)throw new Error('无法读取地图界面。');var template=document.createElement('template');template.innerHTML=await response.text();document.body.append(template.content);$('hex-app').hidden=true;await ready;loading.remove();
     var back=element('button',null,'返回地图');back.id='map-return';back.hidden=true;back.onclick=function(){setMode(true);};document.body.append(back);
     var confirm=game.ui.confirm;game.ui.confirm=function(title,text,yes,no){if(!document.body.classList.contains('map-mode'))return confirm.apply(this,arguments);$('map-confirm-title').textContent=title||'确认操作';$('map-confirm-message').textContent=strip(text);function finish(answer){$('map-confirm').close();if(answer)yes();else if(no)no();sceneKey='';refresh();}$('map-confirm-yes').onclick=function(){finish(true);};$('map-confirm-no').onclick=function(){finish(false);};$('map-confirm').oncancel=function(event){event.preventDefault();finish(false);};$('map-confirm').showModal();};
     view=window.catMapView=createHexView({live:true,cells:bridge.map.cells,camera:bridge.map.camera,onSelect:onSelect,onCamera:function(camera){bridge.map.camera=camera;},roads:function(){return bridge.map.roads();},catCount:function(){return game.village.getKittens();}});
     document.querySelectorAll('#hex-app [data-panel]').forEach(function(b){b.onclick=function(){panel(b.dataset.panel);};});
+    techTree=CatTechTree.create({game:game,bridge:bridge,number:number,canWrite:function(){return window.localGame.canWrite()&&!game.isReadOnly();},recommended:function(){var plan=techPlan();return plan&&plan.next.name;},changed:refresh,research:async function(id){bridge.guard();var result=await bridge.buy('tech',id);if(result&&result.itemBought===false)throw new Error('研究未完成：'+result.reason);message('已研究 '+strip(game.science.get(id).label)+'，新内容已同步到聚落。');refresh();}});
+    $('map-tech-open').onclick=openTechTree;$('map-tech-tree').onclick=openTechTree;
     window.localGame.bindSaveInterval($('map-save-interval'));
+    window.localGame.bindGameSpeed($('map-game-speed'));$('map-game-speed').addEventListener('change',refresh);
     $('map-classic').onclick=function(){setMode(false);};$('map-pause').onclick=function(){act(function(){game.togglePause();});};
     $('map-save').onclick=function(){window.localGame.save('manual').then(function(){message('进度与地图布局已经写入磁盘，并保留手动备份。');refresh();}).catch(function(error){message(error.message,true);});};$('map-save-manager').onclick=function(){$('local-manage').click();};
     $('resources-more').onclick=function(){expanded=!expanded;renderResources();};$('gather-catnip').onclick=function(){act(function(){bridge.gather();});};$('refine-wood').onclick=function(){act(function(){bridge.craft('wood',1);});};$('send-hunters').onclick=function(){act(function(){bridge.hunt();});};
@@ -153,7 +157,7 @@
     $('clear-district').onclick=function(){act(function(){if(!bridge.map.clear(selectedTile))throw new Error('先逐个拆除本格建筑，空地才能清除地区规划。');message('本格地区规划已清除。');});};
     $('auto-layout').onclick=function(){act(function(){bridge.map.arrange();message('已将待安置建筑分配到现有地区空位，原有地块保持原位。');});};$('map-reset').onclick=function(){game.reset();};
     $('goal-select').onchange=function(){bridge.map.goal=$('goal-select').value||null;renderGoal();refreshActions();};$('goal-focus').onclick=function(){if(focusGroup)focusDistrict(focusGroup);else panel('science');};
-    ['tech-filter','build-batch','craft-batch'].forEach(function(id){$(id).onchange=refreshActions;});
+    ['build-batch','craft-batch'].forEach(function(id){$(id).onchange=refreshActions;});
     setMode(true);refresh();setInterval(refresh,1000);
   }
   function start(){mount().catch(function(error){console.error(error);var loading=$('map-loading');if(loading){loading.textContent='地图未能加载：'+error.message+'。';var fallback=element('a',null,'打开原版界面');fallback.href='?view=classic';loading.append(fallback);}else message(error.message,true);});}

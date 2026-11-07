@@ -6,10 +6,32 @@
   var initialError = '';
   var intervalKey = 'cat-nation.local.autosave-seconds', saveInterval = 15, saveTimer;
   var saveIntervals = [{ seconds: 5, label: '5 秒' }, { seconds: 15, label: '15 秒' }, { seconds: 30, label: '30 秒' }, { seconds: 60, label: '1 分钟' }, { seconds: 120, label: '2 分钟' }, { seconds: 300, label: '5 分钟' }, { seconds: 600, label: '10 分钟' }];
+  var speedKey = 'cat-nation.local.game-speed', gameSpeed = 1, gameSpeeds = [1, 2, 3, 5, 10, 20];
   try {
     var storedInterval = Number(localStorage.getItem(intervalKey));
     if (saveIntervals.some(function (item) { return item.seconds === storedInterval; })) saveInterval = storedInterval;
   } catch (_) {}
+  try {
+    var storedSpeed = Number(localStorage.getItem(speedKey));
+    if (gameSpeeds.includes(storedSpeed)) gameSpeed = storedSpeed;
+  } catch (_) {}
+
+  api.getGameSpeed = function () { return gameSpeed; };
+  api.setGameSpeed = function (speed) {
+    speed = Number(speed);
+    if (!gameSpeeds.includes(speed)) throw new Error('请选择有效的游戏速度。');
+    localStorage.setItem(speedKey, String(speed));
+    gameSpeed = speed;
+    document.querySelectorAll('[data-game-speed]').forEach(function (select) { select.value = String(gameSpeed); });
+  };
+  api.bindGameSpeed = function (select) {
+    gameSpeeds.forEach(function (speed) { select.add(new Option('×' + speed, String(speed))); });
+    select.value = String(gameSpeed);
+    select.addEventListener('change', function () {
+      try { api.setGameSpeed(select.value); }
+      catch (error) { select.value = String(gameSpeed); status('设置未保存：' + error.message, true); }
+    });
+  };
 
   function intervalLabel() { return saveIntervals.find(function (item) { return item.seconds === saveInterval; }).label; }
   function scheduleAutosave() {
@@ -136,6 +158,17 @@
   api.attach = function (game) {
     gameRef = game;
     game.opts.disableTelemetry = true;
+    var originalTick = game.tick, originalTickRate = game.getTicksPerSecondUI;
+    // Keep the native tick size and offline calculations; accelerate complete simulation steps.
+    game.tick = function () {
+      if (suspended || conflict || this.previewMode || this.currentSaveIsBroken) return;
+      var steps = gameSpeed;
+      for (var step = 0; step < steps; step++) {
+        originalTick.apply(this, arguments);
+        if (this.isPaused || this.previewMode || this.currentSaveIsBroken || suspended || conflict) break;
+      }
+    };
+    if (originalTickRate) game.getTicksPerSecondUI = function () { return originalTickRate.apply(this, arguments) * gameSpeed; };
     // Use one wall-clock autosave timer, including while the game is paused.
     game.autosaveFrequency = game.ticksBeforeSave = Infinity;
     var originalSave = game.save;
@@ -187,6 +220,7 @@
       '<dialog id="local-dialog"><div class="local-heading"><h2>本地存档</h2><button id="local-close" aria-label="关闭存档管理">✕</button></div>' +
       '<p>进度写入 <code>data/latest.json</code>，每分钟保留一个自动快照（最近 240 份）。手动备份和恢复前的快照长期保留。</p>' +
       '<div class="local-autosave"><label for="local-save-interval">自动存档间隔</label><select id="local-save-interval" data-save-interval></select><span>立即生效，并记住本浏览器的选择。</span></div>' +
+      '<div class="local-autosave"><label for="local-game-speed">游戏速度</label><select id="local-game-speed" data-game-speed></select><span>暂停期间不推进；自动存档仍按现实时间计时。</span></div>' +
       '<div class="local-actions"><button id="local-save" class="primary">立即保存并备份</button><button id="local-export">导出存档文件</button><button id="local-import">导入存档文件</button></div>' +
       '<input type="file" id="local-file" accept=".json,.txt,.save" hidden>' +
       '<label for="local-text">也可以粘贴原版导出的存档文字</label><textarea id="local-text" rows="3" placeholder="粘贴 JSON 或原版压缩存档"></textarea><button id="local-import-text">导入这段存档</button>' +
@@ -195,6 +229,7 @@
       '<dialog id="local-confirm" aria-labelledby="local-confirm-title"><h3 id="local-confirm-title">确认替换进度</h3><p id="local-confirm-message"></p><div class="local-actions"><button id="local-confirm-no" autofocus>取消</button><button id="local-confirm-yes">确认并保留旧备份</button></div></dialog>';
     document.body.appendChild(dock);
     api.bindSaveInterval(document.getElementById('local-save-interval'));
+    api.bindGameSpeed(document.getElementById('local-game-speed'));
     var dialog = document.getElementById('local-dialog');
     function bind(id, action) {
       document.getElementById(id).addEventListener('click', async function () {

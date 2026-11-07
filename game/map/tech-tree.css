@@ -1,0 +1,89 @@
+body.tech-tree-open{overflow:hidden}
+#hex-app #tech-tree-dialog{color-scheme:dark;position:fixed;inset:0;width:calc(100vw - 40px);max-width:1560px;height:calc(100dvh - 40px);max-height:1100px;margin:auto;padding:0;color:var(--ink);background:#1a2b24;border:1px solid #83916c;border-radius:5px;box-shadow:0 20px 100px #0009;overflow:hidden;font:13px/1.6 "Microsoft YaHei",system-ui,sans-serif}
+#hex-app #tech-tree-dialog[open]{display:flex;flex-direction:column}
+#hex-app #tech-tree-dialog::backdrop{background:#07120dde;backdrop-filter:blur(4px)}
+#hex-app #tech-tree-dialog button,#hex-app #tech-tree-dialog input,#hex-app #tech-tree-dialog select{font:inherit}
+#hex-app .tech-header{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:18px 24px 16px;border-bottom:1px solid #536044;background:linear-gradient(110deg,#344333,#21382a)}
+#hex-app .tech-header h2{margin:0;font-size:24px;font-weight:500;letter-spacing:2px}
+#hex-app #tech-tree-summary{display:inline-block;margin-left:15px;font-size:11px;letter-spacing:0;color:#bac3a9}
+#hex-app #tech-close{font-size:20px;width:36px;height:36px;padding:0;border-color:#677650;background:#263b2c}
+#hex-app .tech-tools{display:flex;align-items:center;gap:12px;padding:11px 24px;border-bottom:1px solid #46543d;background:#23362a;flex-wrap:wrap}
+#hex-app .tech-search-box{position:relative;flex:1;min-width:170px;max-width:420px}
+#hex-app #tech-search{width:100%;padding:8px 10px;background:#172a20;border:1px solid #54664b;border-radius:3px;color:#e9e4d1;font-size:12px}
+#hex-app #tech-search:focus{outline:1px solid var(--gold)}
+#hex-app #tech-search-results{position:absolute;top:100%;left:0;right:0;z-index:3;background:#293c2d;border:1px solid #83916c;padding:10px;box-shadow:0 8px 24px #0006}
+#hex-app #tech-search-results:not([hidden]){display:flex;flex-wrap:wrap;gap:5px}
+#hex-app .tech-tools select{padding:7px;font-size:12px}
+#hex-app .tech-route-toggle{display:flex;gap:6px;align-items:center;margin:0;font-size:11px;white-space:nowrap}
+#hex-app #tech-match-count{color:var(--muted);font-size:10px}
+#hex-app #tech-locate{margin-left:auto;font-size:11px}
+#hex-app .tech-body{display:grid;grid-template-columns:minmax(0,1fr) 320px;min-height:0;flex:1}
+#hex-app .tech-chart{display:flex;flex-direction:column;min-width:0;min-height:0;background:#14251f}
+#hex-app .tech-legend{display:flex;flex-wrap:wrap;gap:15px;padding:10px 16px;border-bottom:1px solid #384a38;color:#84967d;font-size:10px}
+#hex-app .tech-legend .done{color:#a3c6a0}#hex-app .tech-legend .ready{color:#efcb7c}#hex-app .tech-legend .waiting{color:#99b2c6}#hex-app .tech-legend .locked{color:#839081}
+#hex-app #tech-viewport{position:relative;flex:1;min-height:200px;overflow:hidden;cursor:grab;touch-action:none;isolation:isolate;background-image:radial-gradient(#52704440 .7px,transparent .7px),radial-gradient(ellipse at 50% 5%,#4b543329,transparent 65%);background-size:22px 22px,100% 100%;outline-offset:-3px}
+#hex-app #tech-viewport.dragging{cursor:grabbing}
+#hex-app #tech-viewport,#hex-app #tech-viewport *{-webkit-user-select:none;user-select:none}
+#hex-app #tech-world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+#hex-app .tech-wires{position:absolute;inset:0;pointer-events:none;overflow:visible}
+#hex-app .tech-wires path{fill:none;stroke:#506347;stroke-width:1.5;stroke-linejoin:round}
+#hex-app .tech-wires path.completed{stroke:#9db385;stroke-width:2}
+#hex-app .tech-wires path.route{stroke:#e6c27a;stroke-width:2.8;filter:drop-shadow(0 0 4px #d4b56455)}
+#hex-app .tech-node{position:absolute;width:180px;height:116px;display:grid;grid-template-columns:42px 1fr;grid-template-rows:17px 25px 20px 1fr;align-items:center;column-gap:8px;padding:9px 11px 7px;text-align:left;cursor:pointer;border:1px solid #485943;border-radius:3px;background:linear-gradient(140deg,#293d2e,#1c3024);box-shadow:0 3px 0 #0b1c16,0 5px 14px #07150d66;color:#adbaa3;transition:opacity .15s,border-color .15s}
+#hex-app .tech-node:before{content:"";position:absolute;inset:3px;border:1px solid #7d89651c;border-radius:2px;pointer-events:none}
+#hex-app .tech-node:hover{background:linear-gradient(140deg,#415139,#2a3d2b);border-color:#b4b27e}
+#hex-app .tech-node-branch{grid-column:2;font-size:9px;letter-spacing:2px;color:#95a685;overflow:hidden;white-space:nowrap}
+#hex-app .tech-node-title{grid-column:2;font-size:13px;font-weight:500;color:#d7ddc7;line-height:1.2;overflow-wrap:anywhere}
+#hex-app .tech-node-status{grid-column:2;font-size:10px;color:#889982}
+#hex-app .tech-node-price{grid-column:1/-1;align-self:end;font-size:9px;line-height:1.4;color:#92a482;border-top:1px solid #55634577;padding-top:5px;min-height:29px;white-space:normal}
+#hex-app .tech-emblem{grid-column:1;grid-row:1/4;width:42px;height:48px;display:grid;place-items:center;clip-path:polygon(50% 0,100% 24%,100% 76%,50% 100%,0 76%,0 24%);background:#42533a;color:#a8b68c;box-shadow:inset 0 0 15px #263623}
+#hex-app .tech-emblem svg{width:26px;height:30px;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+#hex-app .tech-node[data-state=done]{border-color:#7c9c70;background:linear-gradient(140deg,#344e35,#203b2b)}
+#hex-app .tech-node[data-state=done] .tech-node-status{color:#a7d1a2}
+#hex-app .tech-node[data-state=ready]{border-color:#c5aa67;background:linear-gradient(140deg,#4b4c31,#303c28)}
+#hex-app .tech-node[data-state=ready] .tech-node-status{color:#f1cf80}
+#hex-app .tech-node[data-state=ready] .tech-emblem{background:#6b6340;color:#f0d590}
+#hex-app .tech-node[data-state=waiting]{border-color:#698393}
+#hex-app .tech-node[data-state=waiting] .tech-node-status{color:#a0bfd0}
+#hex-app .tech-node[data-state=special]{border-style:dashed}
+#hex-app .tech-node.on-route{border-color:#b7a26c}
+#hex-app .tech-node.selected{outline:2px solid #efcc84;outline-offset:4px;box-shadow:0 0 24px #b49a4e33}
+#hex-app .tech-node.dimmed{opacity:.22}
+#hex-app .tech-node.dimmed:focus-visible,#hex-app .tech-node.dimmed:hover{opacity:1}
+#hex-app .tech-special-heading{position:absolute;left:70px;color:#a8aa89;font-size:11px;letter-spacing:1px;white-space:nowrap}
+#hex-app .tech-chart-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-top:1px solid #3e5139;background:#203328}
+#hex-app #tech-tree-help{font-size:10px;color:#94a487}
+#hex-app .tech-zoom{display:flex;align-items:center;gap:5px;flex-shrink:0}
+#hex-app .tech-zoom button{padding:4px 8px;font-size:11px}
+#hex-app .tech-zoom output{font-size:10px;min-width:34px;text-align:center;color:#c2cba9;font-variant-numeric:tabular-nums}
+#hex-app .tech-detail{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:22px 22px 30px;border-left:1px solid #596143;background:linear-gradient(#2c3d2d,#213329);scrollbar-width:thin;scrollbar-color:#647455 #22362a}
+#hex-app .tech-detail-heading{border-bottom:1px solid #536044;padding-bottom:12px;margin-bottom:12px}
+#hex-app .tech-detail-heading .eyebrow{font-size:9px;letter-spacing:1px;overflow-wrap:anywhere}
+#hex-app .tech-detail h3{margin:4px 0 0;font-size:24px;font-weight:500;color:#f0d99c;letter-spacing:1px}
+#hex-app .tech-detail h4{display:flex;align-items:center;justify-content:space-between;font-size:11px;letter-spacing:1px;color:#d4c89d;margin:16px 0 7px;font-weight:500}
+#hex-app .tech-detail h4 small{font-size:9px;color:#9aa98a;letter-spacing:0}
+#hex-app .tech-detail p{font-size:12px;color:#b3c0a5;line-height:1.85;margin:8px 0;white-space:pre-line}
+#hex-app #tech-detail-state{display:inline-block;color:#b5c7a0;font-size:10px;margin-top:5px}
+#hex-app #tech-detail-state[data-state=ready]{color:#f1cf80}
+#hex-app #tech-detail-effect{color:#d1d8bb;font-size:11px}
+#hex-app #tech-detail-flavor{color:#9baa8b;font-size:11px;font-style:italic;border-left:2px solid #687652;padding-left:9px}
+#hex-app .tech-detail .tech-note{font-size:10px;color:#b9bb92;background:#151f1744;border-left:2px solid #7e895f;padding:9px 11px}
+#hex-app .tech-cost-row{display:grid;grid-template-columns:1fr auto;gap:0 6px;font-size:11px;border-bottom:1px solid #4d604133;padding:5px 0;color:#c4ccab}
+#hex-app .tech-cost-row strong{font-size:11px;font-weight:400;font-variant-numeric:tabular-nums}
+#hex-app .tech-cost-row small{grid-column:1/-1;text-align:right;color:#8ca67f;font-size:9px}
+#hex-app .tech-cost-row.lacking strong,#hex-app .tech-cost-row.lacking small{color:#e2ad8a}
+#hex-app .tech-detail #tech-reason{font-size:10px;color:#9fb28f}
+#hex-app .tech-detail-actions{display:grid;gap:7px;margin:12px 0 18px}
+#hex-app .tech-detail-actions button{width:100%;font-size:12px;padding:9px}
+#hex-app .tech-chips{display:flex;gap:5px;flex-wrap:wrap}
+#hex-app .tech-ancestor-list{margin-top:12px;font-size:11px;color:#b6bd98}
+#hex-app .tech-ancestor-list summary{cursor:pointer;margin-bottom:8px}
+#hex-app button.tech-chip{display:inline-block;white-space:normal;font-size:10px;padding:4px 8px;line-height:1.6;background:#2e422d;border-color:#617052;border-radius:3px;color:#cbd4b2}
+#hex-app .tech-muted{font-size:10px;color:#92a382}
+#hex-app .tech-unlock-group{margin-top:16px;border-top:1px solid #4a5e3e}
+#hex-app .tech-unlock-group .tech-chip{margin:0 4px 4px 0}
+#hex-app .tech-unlock-item{margin:7px 0;font-size:11px;color:#c5cfad}
+#hex-app .tech-unlock-item summary{cursor:pointer}
+#hex-app .tech-unlock-item p{font-size:10px;padding:3px 8px;margin:4px 0;color:#9fb18e;background:#15281b55}
+@media(max-width:1050px){#hex-app .tech-body{grid-template-columns:minmax(0,1fr) 285px}#hex-app .tech-chart-footer{flex-wrap:wrap}#hex-app #tech-tree-summary{display:block;margin:2px 0 0}#hex-app .tech-detail{padding:16px}#hex-app .tech-tools{gap:8px;padding:10px 16px}}
+@media(max-width:700px){#hex-app #tech-tree-dialog{width:100vw;height:100dvh;max-height:none;border-radius:0}#hex-app .tech-header{padding:12px 16px}#hex-app .tech-header h2{font-size:20px}#hex-app .tech-tools{padding:8px 12px}#hex-app .tech-search-box{max-width:none;min-width:160px}#hex-app .tech-body{display:flex;flex-direction:column}#hex-app .tech-chart{flex:1;min-height:240px}#hex-app .tech-detail{height:38%;min-height:180px;flex-shrink:0;border-left:0;border-top:1px solid #687455}#hex-app #tech-match-count,#hex-app #tech-tree-help{display:none}#hex-app .tech-legend{gap:9px;padding:6px 12px}#hex-app .tech-chart-footer{padding:6px 12px;justify-content:flex-end}#hex-app #tech-locate{padding:5px 8px}#hex-app .tech-detail h3{font-size:21px}}
