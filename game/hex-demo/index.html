@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>猫国 · 榛果谷｜六角地图风格 Demo</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="world.js" defer></script>
+  <script src="demo.js" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div class="brand"><div class="crest" aria-hidden="true">✦</div><div><p class="eyebrow">CAT NATION / HEX WORLD</p><h1>猫国 <span>· 榛果谷</span></h1></div></div>
+      <div class="prototype"><span class="status-dot"></span>地图风格原型 <small>独立演示 · 刷新还原</small></div>
+    </header>
+
+    <section class="ledger" aria-label="聚落概况">
+      <div><span class="ledger-icon">⌖</span><span>谷地范围<strong id="tile-count">61 <small>地块</small></strong></span></div>
+      <div><span class="ledger-icon">⌂</span><span>聚落建设<strong id="building-count">—</strong></span></div>
+      <div><span class="ledger-icon">❋</span><span>当前季节<strong id="season-label">春 · 万物生长</strong></span></div>
+      <div class="ledger-note">从一簇营火，长成一座猫咪文明。</div>
+    </section>
+
+    <div class="workspace">
+      <section class="map-panel" aria-labelledby="map-heading">
+        <div class="panel-heading"><div><p class="eyebrow">THE HAZEL VALLEY</p><h2 id="map-heading">榛果谷地</h2></div><span class="map-tag">可调斜俯视 / 像素地图</span></div>
+        <div class="map-stage">
+          <canvas id="map" width="600" height="420" tabindex="0" role="img" aria-label="61 格六边形像素地图：营火、猫咪小屋、田地、森林、山地和湖泊。点击或用方向键选择地块。"></canvas>
+          <div class="compass" aria-hidden="true"><span>N</span><b>✦</b></div>
+          <div class="map-caption"><span class="status-dot"></span><span id="map-hint">选择一块土地，看看这里的故事</span></div>
+        </div>
+        <div class="map-tools">
+          <div class="seasons" role="group" aria-label="切换季节"><button data-season="spring" aria-pressed="true">春</button><button data-season="summer" aria-pressed="false">夏</button><button data-season="autumn" aria-pressed="false">秋</button><button data-season="winter" aria-pressed="false">冬</button></div>
+          <div class="toggles"><label><input type="checkbox" id="show-grid" checked> 六角网格</label><label><input type="checkbox" id="show-cats" checked> 猫咪活动</label></div>
+        </div>
+        <section class="camera-controls" aria-label="地图视角">
+          <div class="camera-heading"><span>地图视角</span><div role="group" aria-label="视角预设"><button data-view="oblique">斜俯视</button><button data-view="isometric">近等距</button><button data-view="top">垂直俯视</button></div></div>
+          <div class="camera-sliders"><label for="camera-elevation"><span>俯仰 <output id="elevation-value" for="camera-elevation">45°</output></span><input type="range" id="camera-elevation" min="30" max="90" value="45" step="1"><small>低角度 <span>垂直俯视</span></small></label><label for="camera-azimuth"><span>左右旋转 <output id="azimuth-value" for="camera-azimuth">-20°</output></span><input type="range" id="camera-azimuth" min="-180" max="180" value="-20" step="1"><small>向左 <span>向右</span></small></label></div>
+        </section>
+        <div class="legend" aria-label="地形图例"><span><i class="grass"></i>草地</span><span><i class="forest"></i>林地</span><span><i class="mountain"></i>山地</span><span><i class="water"></i>水域</span><span><i class="mist"></i>迷雾</span></div>
+      </section>
+
+      <aside class="inspector" aria-labelledby="tile-title">
+        <div class="inspector-top"><p class="eyebrow">TILE JOURNAL / 地块手记</p><span id="coordinates">Q 0 · R 0</span></div>
+        <canvas id="portrait" width="120" height="90" aria-hidden="true"></canvas>
+        <div class="tile-copy"><span class="type-badge" id="tile-type">聚落中心</span><h2 id="tile-title">第一簇营火</h2><p id="tile-description">木柴噼啪作响，小猫们围坐在这里，商量谷地的第一间小屋。</p></div>
+        <div class="tile-facts"><div><span>土地状况</span><strong id="tile-status">已有建筑</strong></div><div><span>适合发展</span><strong id="tile-use">聚落中心</strong></div></div>
+        <div class="build-section"><div class="section-label"><h3>在这里安置</h3><span>示意放置</span></div><div class="build-choices"><button data-build="field"><b>田地</b><span>金色作物与木篱笆</span></button><button data-build="hut"><b>猫咪小屋</b><span>红瓦屋顶与温暖灯火</span></button><button data-build="library"><b>图书馆</b><span>蓝色屋顶与星辰书页</span></button></div><p id="build-help" class="help">选择空闲草地，即可试放一个建筑。</p></div>
+        <div class="scene-note"><span>✧</span><p>这里只体验画风、选格与建筑摆放。资源、科技和原版存档不会被修改。</p></div>
+        <button id="reset" class="reset">还原示例地图 <span>↺</span></button>
+      </aside>
+    </div>
+    <footer><span>点击选格 · 方向键移动选择 · 拖动滑块调整视角</span><span>61 HEXES · PIXEL STUDY 02</span></footer>
+    <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,43 @@
+#local-dock { position: fixed; bottom: 12px; right: 14px; z-index: 10000; font: 13px/1.6 system-ui, sans-serif; color: #253b34; }
+#local-dock .local-summary { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border: 1px solid #c8d8cd; border-radius: 10px; background: #f5faf5; box-shadow: 0 3px 18px #142d2218; }
+#local-dock button { cursor: pointer; padding: 6px 12px; color: #284f40; border: 1px solid #bbcfc0; border-radius: 6px; background: #fff; font: inherit; }
+#local-dock button:hover { background: #e4eee5; }
+#local-dock button:focus-visible, #local-dock textarea:focus-visible { outline: 2px solid #397859; outline-offset: 2px; }
+#local-dock .primary { background: #35664d; color: white; border-color: #35664d; }
+#local-dock button.primary:hover { background: #284f40; }
+#local-status { max-width: 380px; overflow-wrap: anywhere; }
+#local-status.error { color: #af2929; font-weight: 600; }
+#local-dialog { width: min(620px, 88vw); max-height: 80vh; padding: 24px; border: 1px solid #c8d8cd; border-radius: 14px; color: #253b34; background: #f7faf6; font: 14px/1.7 system-ui, sans-serif; box-shadow: 0 20px 100px #0003; }
+#local-dialog::backdrop { background: #14281d66; }
+#local-confirm { max-width: min(420px, 85vw); border: 1px solid #c8d8cd; border-radius: 12px; padding: 22px; color: #253b34; background: #f7faf6; font: 14px/1.7 system-ui, sans-serif; }
+#local-confirm::backdrop { background: #14281d88; }
+#local-confirm h3 { margin-top: 0; }
+#local-confirm .local-actions { display: flex; gap: 10px; justify-content: flex-end; }
+#local-dialog h2, #local-dialog h3 { margin: 0; }
+#local-dialog p { margin: 14px 0; }
+#local-dialog .local-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+#local-dialog .local-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+#local-dialog textarea { box-sizing: border-box; width: 100%; margin: 8px 0; padding: 10px; border: 1px solid #bbcfc0; border-radius: 6px; resize: vertical; }
+#local-dialog h3 { margin-top: 22px; }
+#local-backups { max-height: 230px; overflow: auto; }
+#local-dialog .local-backup { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #dce5dc; gap: 12px; font-size: 12px; }
+#local-dialog .local-note { color: #63736a; font-size: 12px; }
+#local-dialog .local-autosave { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; margin:14px 0; }
+#local-dialog .local-autosave select { padding:6px 10px; border:1px solid #bbcfc0; border-radius:6px; background:#fff; color:#284f40; font:inherit; }
+#local-dialog .local-autosave span { color:#63736a; font-size:12px; }
+#local-dialog .local-autosave select:focus-visible { outline:2px solid #397859; outline-offset:2px; }
+body { width: auto !important; padding-bottom: 70px; }
+#headerToolbar .kgnet-login-link-container { display: none; }
+@media (max-width: 1100px) {
+  html, html body { height: auto !important; min-height: 100%; overflow-y: auto !important; }
+  html body { padding-bottom: 80px; }
+  #gamePageContainer { width: 100% !important; overflow: visible; }
+  #topBar { position: relative !important; min-width: 0 !important; height: auto !important; min-height: 28px; flex-wrap: wrap; gap: 6px; padding-bottom: 6px; white-space: normal; }
+  #game, #loadingContainer { position: relative !important; top: 0 !important; bottom: auto !important; min-width: 0 !important; width: 100% !important; white-space: normal; }
+  #game #leftColumn, #game #midColumn, #game #rightColumn { display: block; box-sizing: border-box; min-width: 0 !important; max-width: none !important; width: 100% !important; height: auto !important; min-height: 0 !important; margin: 0; padding: 12px; position: relative; top: auto; overflow: visible; }
+  #game #leftColumn { max-height: 300px; overflow-y: auto; padding-top: 8px; }
+  #game .tabsContainer { position: static !important; }
+  #game #midColumn { border-top: 1px solid #8884; border-bottom: 1px solid #8884; }
+  #game #footerLinks { position: static; padding: 15px; text-align: right; }
+}
+@media (max-width: 650px) { #local-dock { left: 8px; right: 8px; bottom: 8px; } #local-dock .local-summary { flex-wrap: wrap; gap: 4px 10px; } #local-status { flex: 1; font-size: 11px; } }
